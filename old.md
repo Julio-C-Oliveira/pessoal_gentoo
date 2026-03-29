@@ -173,7 +173,6 @@ Caso não seja:
 - ` nano /etc/default/grub ` - Defina o ` GRUB_DISABLE_OS_PROBER=false `,  ` GRUB_TIMEOUT=5 ` e ` GRUB_DEFAULT=0 `. 
 - ` grub-mkconfig -o /boot/grub/grub.cfg ` - ...
 
-
 ### Definir a senha de root
 - ` passwd ` - ...
 
