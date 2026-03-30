@@ -78,6 +78,8 @@ Se não tiver acesso a internet dá pra usar o:
 - ` cp /mnt/gentoo/home/pessoal_gentoo/make.conf /mnt/gentoo/etc/portage/make.conf ` 
 - ` ` - Quero adicionar nos meus dotfiles USE FLAGS para cada pacote, ao invés de utilizar as globais. Aqui vai ficar o comando para copiar ass flags, ou usar o stow pra isso.
 
+Desative a flag dist-kernel no USE FLAGS global.
+
 Pegou logo o make.conf porque depois vai ter o chroot.
 
 **Chroot:**
@@ -226,6 +228,9 @@ Verifique  se os caminhos das chaves já estão definidos no seu make.conf
 
 Se quiser pode rodar o:
 - ` emerge --prune sys-kernel/gentoo-kernel ` - Serve para limpar versões antigas do kernel.
+
+Ative a flag dist-kernel no USE FLAGS global.
+
 - ` emerge --ask @module-rebuild ` - Recompila os módulos para se adaptarem ao novo kernel.
 
 Se você instalou algum módulo que precise ser carregado no initframs:
