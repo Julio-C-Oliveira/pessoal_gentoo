@@ -8,8 +8,8 @@ Baseado no Amd64Handbook do Gentoo. Utilizando Systemd ao invés de OpenRC.
 | /boot | 1024MB | 513 | 1537 |
 | swap | 4096MB | 1537 | 5633 |
 | / | 30720MB | 5633 | 36353 |
-| /var | 20480MB | 36353 | 56833 |
-| /home | -1 | 56833 | -1 |
+| /var | 40960MB | 36353 | 77313 |
+| /home | -1 | 77313 | -1 |
 
 **Comandos para partição:**
 - ` wipefs -a /dev/disco ` - Remove assinaturas antigas.
@@ -24,8 +24,8 @@ Baseado no Amd64Handbook do Gentoo. Utilizando Systemd ao invés de OpenRC.
     - ` mkpart boot ext4 513 1537 ` - /boot com 1GB.
     - ` mkpart swap linux-swap 1537 5633 ` - swap com 4GB.
     - ` mkpart rootfs ext4 5633 36353 ` - / com 30GB.
-    - ` mkpart var ext4 36353 56833 ` - /var com 20GB.
-    - ` mkpart home ext4 56833 -1` - /home com tudo que restou.
+    - ` mkpart var ext4 36353 77313 ` - /var com 20GB.
+    - ` mkpart home ext4 77313 -1` - /home com tudo que restou.
     - ` print ` - Exibe as partições definidas.
     - ` quit ` - Sai do parted.
 
@@ -157,6 +157,11 @@ app-arch/unrar unRAR
 sys-kernel/linux-firmware linux-fw-redistributable
 sys-firmware/intel-microcode intel-ucode
 ```
+
+**Instalando um utilitário:**
+- ` emerge --ask app-portage/gentoolkit ` - Um utilitário de USE flags.
+- ` equery uses <nome-do-pacote> ` - Verifica quais flags um pacote tem.
+- ` eclean-dist --deep ` - Limpa binários antigos.
 
 **Atualizando o @World:**
 - ` emerge --ask --verbose --update --deep --changed-use @world ` - Atualiza o worl.
@@ -365,5 +370,7 @@ GRUB_CFG=/boot/efi/EFI/Gentoo/grub.cfg
 End
 
 Aumentar a /var para 30GB+ pra evitar o parallelism reduced.
+
 Testando o vmware para video card
+
 Pode ser uma boa adicionar o grub as flags do linux-firmware
