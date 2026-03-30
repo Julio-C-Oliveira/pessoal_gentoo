@@ -123,6 +123,8 @@ Caso não seja:
 
 **Configurando o video cards:**
 - ` emerge --ask app-editors/vim ` - Um editor de texto.
+- ` emerge --ask --oneshot sys-apps/pciutils ` - Um utilitário.
+- ` lspci -k | grep -A 3 -i "VGA" ` - ...
 - `  vim /etc/portage/package.use/00-core ` - Adicione ou altere a área de GPU para a correta. Nesse formato:
 ```
 */* VIDEO_CARDS: -* intel
@@ -159,6 +161,7 @@ sys-firmware/intel-microcode intel-ucode
 **Atualizando o @World:**
 - ` emerge --ask --verbose --update --deep --changed-use @world ` - Atualiza o worl.
 - ` emerge --ask --pretend --depclean ` - Mostra pacotes orfãos, tipo o cpuid2cpuflags que foi instalado com a flag oneshot. 
+- ` emerge --noreplace categoria/nome-do-pacote ` - Caso queira manter algum dos citados.
 - ` emerge --ask --depclean ` - Remove os pacotes orfãos.
 
 **Timezone:**
@@ -174,7 +177,11 @@ sys-firmware/intel-microcode intel-ucode
 - ` env-update && source /etc/profile && export PS1="(chroot) ${PS1}" ` - Atualiza o ambiente.
 
 # Configuring the Linux kernel
-**Instalando firmware e microcode:**
+**Instalando firmwares e microcode:**
+- ` vim  /etc/portage/package.use/01-kernel  ` - Definir as USE Flags para o linux-firmware.
+```
+sys-kernel/installkernel-65 dracut grub
+```
 - ` emerge --ask sys-kernel/linux-firmware ` - Linux firmwares.
 - ` emerge --ask sys-firmware/sof-firmware ` - Firmwares de áudio para hardwares mais novos.
 - ` emerge --ask sys-firmware/intel-microcode ` - Os microcodes da AMD já vem com o linux-firmwares, porém os da intel vem separadamente.
@@ -356,3 +363,7 @@ GRUB_CFG=/boot/efi/EFI/Gentoo/grub.cfg
 - ` rm /stage3-*.tar.* ` - ...
 
 End
+
+Aumentar a /var para 30GB+ pra evitar o parallelism reduced.
+Testando o vmware para video card
+Pode ser uma boa adicionar o grub as flags do linux-firmware
