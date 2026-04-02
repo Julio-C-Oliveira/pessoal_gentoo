@@ -185,7 +185,7 @@ sys-firmware/intel-microcode intel-ucode
 
 # Configuring the Linux kernel
 **Instalando firmwares e microcode:**
-- ` vim  /etc/portage/package.use/01-kernel  ` - Definir as USE Flags para o linux-firmware.
+- ` vim  /etc/portage/package.use/01-kernel  ` - Definir as USE Flags para o linux-firmware. !Vou retirar isso, após tirar a flag dist-kernel, isso deixou de ser necesário.!
 ```
 sys-kernel/installkernel-65 dracut grub
 ```
@@ -209,9 +209,9 @@ kernel_cmdline=" root=UUID=2122cd72-94d7-4dcc-821e-3705926deecc " # Note leading
 
 **Signed kernel modules:**
 
-- ` vim /etc/portage/package.use/kernel  ` - ...
+- ` vim /etc/portage/package.use/01-kernel  ` - ...
 ```
-sys-kernel/gentoo-kernel modules-sign secureboot
+sys-kernel/gentoo-kernel modules-sign secureboot hardened modules-compress -debug
 ```
 
 Verifique  se os caminhos das chaves já estão definidos no seu make.conf
@@ -274,7 +274,7 @@ Recomendo o defaults,noatime inicialmente. Depois lê a documentação do mount.
 - ` echo tux > /etc/hostname ` - ...
 
 **Configurando a rede:**
-- ` vim /etc/portage/package.use/network ` - ...
+- ` vim /etc/portage/package.use/02-network ` - ...
 ```
 net-wireless/wpa_supplicant dbus
 ```
@@ -300,7 +300,6 @@ FILE /etc/hostsFilling in the networking information
 
 **Configuração de boot e de init:**
 - ` systemd-machine-id-setup ` - ...
-- ` systemd-firstboot --prompt ` - ...
 - `  systemctl preset-all --preset-mode=enable-only` - ...
 
 **Indexação de arquivos:**
@@ -336,7 +335,7 @@ cp /usr/lib/grub/grub-x86_64.efi.signed /boot/efi/EFI/Gentoo/grubx64.efi
 - ` cd /boot/efi/EFI/Gentoo ` - ...
 - ` openssl x509 -in /etc/portage/certs/kernel_key.pem -inform PEM -out /etc/portage/certs/kernel_key.der -outform DER ` - ...
 - ` mokutil --import /etc/portage/certs/kernel_key.der ` - ...
-- ` efibootmgr --create --disk /dev/boot-disk --part boot-partition-id --loader '\EFI\Gentoo\shimx64.efi' --label 'GRUB via Shim' --unicode ` - ...
+- ` efibootmgr --create --disk /dev/disco --part 1 --loader '\EFI\Gentoo\shimx64.efi' --label 'GRUB via Shim' --unicode ` - ...
 
 **Configurando o Grub:**
 - ` grub-mkconfig -o /boot/efi/EFI/Gentoo/grub.cfg  ` - ...
@@ -345,6 +344,7 @@ cp /usr/lib/grub/grub-x86_64.efi.signed /boot/efi/EFI/Gentoo/grubx64.efi
 GRUB_CFG=/boot/efi/EFI/Gentoo/grub.cfg
 ```
 - ` env-update ` - ...
+- ` systemd-firstboot --prompt ` - ...
 
 **Reboot:**
 - ` exit ` - ...
@@ -379,3 +379,19 @@ Aumentar a /var para 30GB+ pra evitar o parallelism reduced.
 Testando o vmware para video card
 
 Pode ser uma boa adicionar o grub as flags do linux-firmware
+
+Dar um equery no vim depois.
+
+Tenho que adicionar o aviso de revisar o número de jobs no Make.conf.
+
+Para pegar o UUID do ROOTFS: blkid | grep ROOTFS
+
+Na hora de criar a chave openssl:
+BR, Para, Belem, Gentoo, Kernel Signing, Secure Boot Key.
+
+sys-boot/grub secureboot
+sys-boot/shim secureboot
+
+adicionar no 02-grub
+
+falta adicionar a explicação do MOK após o reboot
