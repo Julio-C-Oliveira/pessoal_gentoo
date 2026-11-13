@@ -1,2 +1,3 @@
 sys-kernel/installkernel grub dracut
 sys-kernel/gentoo-kernel modules-sign secureboot
+*/* dist-kernel
