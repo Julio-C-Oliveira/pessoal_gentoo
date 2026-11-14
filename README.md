@@ -456,12 +456,19 @@ chmod 0440 /etc/sudoers.d/10-tux
 ```
 
 ### 4. Desabilitando o login direto do root (Hardening de Segurança):
-Com o usuário `tux` devidamente criado e o `sudo` configurado para administração, você pode desabilitar e travar o login por senha direta da conta root:
+Com o usuário `tux` devidamente criado e o `sudo` configurado para administração, é uma boa prática de segurança (*hardening*) travar a senha da conta `root`:
 ```bash
 passwd -dl root
 ```
+
 > [!NOTE]
-> Caso prefira manter uma senha direta de emergência para o root no console, basta não executar esse comando e manter a senha definida no passo 1.
+> **Por que é altamente recomendado desativar o login por senha direta do root?**
+> 1. **Proteção contra ataques de força bruta**: Como o usuário `root` existe obrigatoriamente em todos os sistemas Unix/Linux, ele é o alvo primordial de ataques automatizados de adivinhação de senhas (especialmente se o SSH for ativado posteriormente). O parâmetro `-l` bloqueia a senha no `/etc/shadow`, rejeitando sumariamente qualquer tentativa de autenticação direta.
+> 2. **Auditoria e Rastreabilidade**: Quando você executa ações administrativas com `sudo`, o systemd registra nos logs (`journalctl`) exatamente **qual usuário** disparou o comando, quando e com quais parâmetros. O login direto como root elimina essa autoria individual.
+> 3. **Prevenção de acidentes catastróficos**: Usar a conta de superusuário continuamente reduz a atenção e facilita erros irreversíveis de deleção de arquivos de sistema (`rm -rf`) ou permissões corrompidas. O `sudo` força uma pausa consciente para operações de privilégio elevado.
+> 4. **Sem perda de poder administrativo**: Você continua com acesso root completo sempre que precisar, bastando executar `sudo -i` ou `sudo <comando>` digitando a sua própria senha de usuário (`tux`).
+> 
+> *(Caso prefira manter uma senha direta de emergência exclusiva para o root no console local, você pode optar por pular este comando).*
 
 ### 5. Limpeza de arquivos temporários:
 ```bash
