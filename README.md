@@ -363,6 +363,7 @@ systemctl enable NetworkManager
 
 ### Senha de Root e Serviços do Sistema:
 ```bash
+# Defina a senha do usuário root:
 passwd
 
 systemd-machine-id-setup
@@ -427,7 +428,40 @@ env-update
 > [!NOTE]
 > Não é necessário executar `systemd-firstboot`, pois você já configurou hostname, fuso horário, locales, machine-id e senha de root manualmente nos passos anteriores. Além disso, ele falha dentro do chroot quando a mídia LiveCD de instalação roda OpenRC.
 
-### Reiniciando o sistema:
+---
+
+# 7. Users, Passwords and Sudo (OBRIGATÓRIO ANTES DO REBOOT)
+
+> [!CAUTION]
+> **ATENÇÃO MÁXIMA: DEFINA AS SENHAS ANTES DE REINICIAR!**
+> O Gentoo **não possui nenhuma senha padrão** para o `root` (a conta vem bloqueada no Stage 3). Se você reiniciar o computador antes de executar o `passwd` ou criar seu usuário, **você ficará trancado fora do sistema** sem conseguir fazer login no console!
+
+### 1. Definindo a senha do Root:
+```bash
+passwd
+```
+
+### 2. Criando o usuário comum e definindo a senha:
+Crie o usuário `tux` com os grupos necessários para administração, áudio, vídeo e dispositivos:
+```bash
+useradd -m -G users,wheel,audio,video,input -s /bin/bash tux
+passwd tux
+```
+
+### 3. Instalando o Sudo e concedendo privilégios:
+```bash
+emerge --ask app-admin/sudo
+echo "tux ALL=(ALL:ALL) ALL" > /etc/sudoers.d/10-tux
+chmod 0440 /etc/sudoers.d/10-tux
+```
+
+### 4. Limpeza de arquivos temporários:
+```bash
+rm -f /stage3-*.tar.*
+```
+
+### 5. Saindo do Chroot e Reiniciando:
+Após confirmar que as senhas foram definidas com sucesso:
 ```bash
 exit
 cd
@@ -439,8 +473,9 @@ reboot
 
 ---
 
-# 7. Primeiro Boot: Homologando a Chave no MOKManager
+# 8. Primeiro Boot e Homologação no MOKManager
 
+### 1. Homologando a Chave no MOKManager (Tela Azul):
 Ao reiniciar com o Secure Boot ativado no setup da sua placa-mãe, o **Shim** detectará que há uma nova chave aguardando aprovação e abrirá a interface azul do **MOKManager** (*Shim UEFI key management*):
 
 1. Pressione qualquer tecla antes do encerramento da contagem regressiva para entrar no menu.
@@ -448,35 +483,28 @@ Ao reiniciar com o Secure Boot ativado no setup da sua placa-mãe, o **Shim** de
 3. (Opcional) Selecione **View key 0** para inspecionar os dados do certificado gerado anteriormente (*Gentoo Kernel Signing*).
 4. Selecione **Continue**.
 5. Na tela que pergunta *"Enroll the key(s)?"*, selecione **Yes**.
-6. Digite a senha temporária que você definiu no comando `mokutil --import` e pressione Enter.
+6. Digite a **senha temporária** que você definiu no comando `mokutil --import` e pressione Enter.
 7. Selecione **Reboot**.
 
 Pronto! Agora o firmware UEFI aceita o Shim, o Shim valida o GRUB, e o GRUB carrega seu kernel e módulos com total conformidade do Secure Boot.
 
+### 2. Fazendo Login no Terminal (TTY):
+Após a inicialização, o Gentoo exibirá o prompt de texto no console:
+```text
+tux login: tux
+Password: <digite a senha que você configurou no passwd tux>
+```
+*(Lembre-se: os caracteres da senha não aparecem na tela por segurança).*
+
+> [!TIP]
+> **Recuperação de Emergência (Se reiniciou sem definir senha):**
+> Caso tenha esquecido de rodar `passwd` antes do reboot:
+> 1. No menu do GRUB, selecione a entrada do Gentoo e pressione a tecla **`e`**.
+> 2. Vá até o fim da linha que começa com `linux` e adicione `init=/bin/bash`.
+> 3. Pressione `Ctrl + X` para inicializar direto no prompt do root.
+> 4. Execute `mount -o remount,rw /`, defina a senha com `passwd` e reinicie com `reboot -f`.
+
 ---
-
-# 8. Finalizing
-
-### Criando o usuário padrão e configurando o sudo:
-```bash
-useradd -m -G users,wheel,audio,video,input -s /bin/bash tux
-passwd tux
-
-emerge --ask app-admin/sudo
-echo "tux ALL=(ALL:ALL) ALL" > /etc/sudoers.d/10-tux
-chmod 0440 /etc/sudoers.d/10-tux
-```
-
-### Desabilitando o login direto do root:
-```bash
-passwd -dl root
-```
-
-### Limpeza final e recompilação preventiva:
-```bash
-rm -f /stage3-*.tar.*
-emerge --ask --verbose --update --deep --newuse --with-bdeps=y @world
-```
 
 ---
 
