@@ -607,3 +607,67 @@ mkdir -p ~/.config
 stow bash git bspwm sxhkd picom polybar rofi kitty yazi
 ```
 
+---
+
+# 10. Otimizações de Desempenho: Swap em RAM com ZRAM
+
+Como o kernel de distribuição (`sys-kernel/gentoo-kernel`) já traz o módulo de kernel `zram` ativado por padrão e o sistema utiliza o **systemd**, a maneira mais limpa, estável e nativa de gerenciar o ZRAM é utilizando o gerador oficial **`sys-apps/zram-generator`**.
+
+O ZRAM cria um bloco comprimido em tempo real na própria memória RAM que atua como área de swap extremamente rápida. Com isso, os dados inativos são compactados (geralmente com taxa de 2:1 a 3:1 via algoritmo `zstd`), multiplicando a capacidade utilizável da sua memória física sem a lentidão de leituras/escritas em disco.
+
+### 1. Instalando o Gerador de ZRAM:
+> [!NOTE]
+> No Gentoo, o pacote oficial do Portage se chama **`sys-apps/zram-generator`** (projeto upstream `systemd/zram-generator`).
+
+```bash
+sudo emerge --ask sys-apps/zram-generator
+```
+
+### 2. Criando o arquivo de configuração:
+Crie o arquivo `/etc/systemd/zram-generator.conf`:
+```bash
+sudo vim /etc/systemd/zram-generator.conf
+```
+
+Adicione a configuração abaixo (cria um dispositivo de tamanho equivalente a 100% da RAM física usando o algoritmo ultrarrápido `zstd` e prioridade máxima `100`):
+```ini
+[zram0]
+zram-size = ram
+compression-algorithm = zstd
+swap-priority = 100
+```
+
+> [!TIP]
+> **Swap Híbrido Inteligente**: Ao definir `swap-priority = 100`, o kernel sempre usará a compactação em RAM primeiro. Sua partição de 4GB em disco (`/dev/disco3`) permanece como salvaguarda secundária caso o uso de memória ultrapasse a RAM ou para hibernação.
+
+### 3. Recarregando o systemd e iniciando o ZRAM:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start systemd-zram-setup@zram0.service
+```
+
+### 4. Confirmando o funcionamento:
+Inspecione o dispositivo criado:
+```bash
+zramctl
+swapon --show
+```
+Deverá aparecer o dispositivo `/dev/zram0` ativo com o algoritmo `zstd` e prioridade `100`.
+
+*(Nota: O `systemd-zram-generator` gera o serviço dinamicamente e ativa o `/dev/zram0` de forma 100% automática a cada boot — não é necessário rodar `systemctl enable`).*
+
+### 5. Ajuste fino de desempenho (`vm.swappiness`):
+Como o ZRAM é executado na RAM e sua compressão é ordens de grandeza mais rápida que a escrita em disco, é recomendado instruir o kernel a ser mais agressivo na compactação de páginas anônimas antes de tentar descartar caches úteis de arquivos:
+
+```bash
+echo "vm.swappiness = 180" | sudo tee /etc/sysctl.d/99-zram.conf
+sudo sysctl --system
+```
+
+Verifique se o parâmetro foi aplicado com sucesso:
+```bash
+cat /proc/sys/vm/swappiness
+```
+*(O retorno deve ser `180`).*
+
+

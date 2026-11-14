@@ -17,3 +17,6 @@ gnome-extra/polkit-gnome
 
 # Controle de brilho
 sys-power/brightnessctl
+
+# Compactação de memória Swap em RAM (ZRAM)
+sys-apps/zram-generator
