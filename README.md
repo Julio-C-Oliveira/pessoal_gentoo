@@ -422,8 +422,10 @@ grub-mkconfig -o /boot/efi/EFI/Gentoo/grub.cfg
 
 echo "GRUB_CFG=/boot/efi/EFI/Gentoo/grub.cfg" > /etc/env.d/99grub
 env-update
-systemd-firstboot --prompt
 ```
+
+> [!NOTE]
+> Não é necessário executar `systemd-firstboot`, pois você já configurou hostname, fuso horário, locales, machine-id e senha de root manualmente nos passos anteriores. Além disso, ele falha dentro do chroot quando a mídia LiveCD de instalação roda OpenRC.
 
 ### Reiniciando o sistema:
 ```bash
