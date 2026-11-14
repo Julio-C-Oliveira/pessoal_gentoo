@@ -670,4 +670,138 @@ cat /proc/sys/vm/swappiness
 ```
 *(O retorno deve ser `180`).*
 
+---
+
+# 11. Guia Rápido de Comandos e Manutenção do Gentoo (Portage Cheat Sheet)
+
+Um guia prático com os comandos e fluxos essenciais para o dia a dia e manutenção contínua do seu Gentoo Linux.
+
+---
+
+### 1. Tabela de Parâmetros Mais Usados do `emerge`
+
+| Opção Longa | Opção Curta | Descrição |
+| :--- | :---: | :--- |
+| `--ask` | `-a` | Exibe o plano de instalação detalhado e solicita confirmação antes de compilar. |
+| `--verbose` | `-v` | Mostra detalhes completos das USE flags (habilitadas, desabilitadas e novas). |
+| `--pretend` | `-p` | Simula a execução sem baixar ou instalar nada (dry-run). |
+| `--update` | `-u` | Atualiza os pacotes especificados para a versão mais recente. |
+| `--deep` | `-D` | Considera toda a árvore de dependências (não apenas dependências diretas). |
+| `--newuse` | `-N` | Recompila pacotes cujas USE flags foram alteradas desde a última compilação. |
+| `--oneshot` | `-1` | Instala o pacote sem gravá-lo no arquivo `@world` (ideal para dependências temporárias). |
+| `--depclean` | `-c` | Remove pacotes e dependências órfãs não mais referenciadas no `@world`. |
+
+---
+
+### 2. Sincronização dos Repositórios
+Mantenha a árvore do Portage e seus repositórios sincronizados:
+
+```bash
+# Sincroniza todos os repositórios configurados (gentoo oficial, guru, etc.):
+emaint sync -a
+
+# Alternativa clássica:
+emerge --sync
+```
+
+---
+
+### 3. Busca e Inspeção de Pacotes
+Antes de instalar, investigue quais pacotes existem e quais flags estão disponíveis:
+
+```bash
+# Buscar por nome de pacote:
+emerge --search firefox
+
+# Buscar por palavra-chave na descrição:
+emerge --searchdesc "terminal emulator"
+
+# Simular instalação inspecionando detalhadamente as USE flags:
+emerge -pv kitty
+
+# Ver explicação detalhada de cada USE flag do pacote (via gentoolkit):
+equery uses media-video/pipewire
+
+# Descobrir a qual pacote pertence determinado arquivo no sistema:
+equery belongs /usr/bin/bspwm
+
+# Listar todos os arquivos instalados por um pacote:
+equery files x11-wm/bspwm
+```
+
+---
+
+### 4. Instalação e Remoção
+
+```bash
+# Instalar um pacote (adicionando ao conjunto @world):
+sudo emerge --ask x11-terms/kitty
+
+# Instalar sem registrar no @world (ideal para ferramentas de compilação pontuais):
+sudo emerge --ask --oneshot app-portage/cpuid2cpuflags
+
+# Desinstalar um pacote específico e limpar dependências desnecessárias:
+sudo emerge --ask --depclean x11-terms/kitty
+```
+
+---
+
+### 5. Atualização Completa do Sistema (`@world`)
+A rotina clássica e recomendada de atualização periódica do Gentoo:
+
+```bash
+# 1. Sincronizar os repositórios:
+emaint sync -a
+
+# 2. Ler notícias de segurança ou intervenções manuais anunciadas pelos desenvolvedores:
+eselect news read
+
+# 3. Atualizar todos os pacotes do sistema com dependências profundas e novas flags:
+sudo emerge --ask --verbose --update --deep --newuse @world
+
+# 4. Remover bibliotecas e pacotes órfãos deixados por atualizações:
+sudo emerge --ask --depclean
+
+# 5. Recompilar pacotes que dependem de bibliotecas atualizadas (se houver):
+sudo emerge @preserved-rebuild
+```
+
+---
+
+### 6. Gerenciamento de Arquivos de Configuração (`/etc/`)
+Quando uma atualização traz mudanças em arquivos de `/etc/`, o Portage não sobrescreve suas edições pessoais. Em vez disso, ele cria arquivos protegidos `._cfg0000_<nome>`.
+
+```bash
+# Ferramenta interativa recomendada para revisar diffs e mesclar arquivos:
+sudo dispatch-conf
+# Teclas no dispatch-conf:
+#   'u' = usar o novo arquivo fornecido pelo pacote
+#   'z' = manter o seu arquivo atual (descartar o novo)
+#   'm' = mesclar manualmente as diferenças (merge)
+
+# Alternativa nativa clássica:
+sudo etc-update
+```
+
+---
+
+### 7. Comandos Essenciais do `eselect`
+O `eselect` gerencia módulos, links simbólicos e componentes do sistema:
+
+```bash
+# Listar e selecionar perfis do sistema:
+eselect profile list
+sudo eselect profile set <numero>
+
+# Gerenciar repositórios adicionais (overlays):
+eselect repository list
+sudo eselect repository enable guru
+emaint sync -r guru
+
+# Ler avisos e comunicados importantes do Gentoo:
+eselect news list
+eselect news read
+```
+
+
 
