@@ -1,0 +1,6 @@
+# Servidor Xorg e utilitários de exibição
+x11-base/xorg-server glamor udev xorg
+x11-drivers/xf86-input-libinput
+x11-apps/xinit
+x11-apps/xrandr
+x11-misc/xdg-user-dirs

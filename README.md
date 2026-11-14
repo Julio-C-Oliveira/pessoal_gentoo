@@ -4,24 +4,35 @@ Tutorial de instalação do Gentoo Linux baseado no Amd64 Handbook oficial, util
 
 ---
 
-## Organização Modular do `/etc/portage/package.use/`
+## Organização Modular do `/etc/portage/`
 
-No Gentoo, as flags de compilação por pacote (`USE flags`) podem ser definidas em um único arquivo `/etc/portage/package.use` ou, preferencialmente, dentro de um diretório modular `/etc/portage/package.use/`.
+No Gentoo, as definições de compilação por pacote (`USE flags`), palavras-chave (`accept_keywords`) e licenças (`license`) podem ser definidas em arquivos únicos ou, preferencialmente, dentro de diretórios modulares sob `/etc/portage/`.
 
-O uso de um **diretório** é a prática recomendada:
+O uso de **diretórios modulares** é a prática recomendada:
 - **Ordem lexicográfica de leitura**: O Portage lê todos os arquivos contidos no diretório em ordem alfabética/numérica (`00-` é lido antes de `01-`). Se houver regras conflitantes para um mesmo pacote, a regra do arquivo lido por último prevalece.
 - **Manutenção simplificada**: Cada arquivo agrupa pacotes de uma camada lógica do sistema.
 
 ### Estrutura adotada neste repositório:
-- `00-core`: Flags de arquitetura de CPU (`CPU_FLAGS_X86`) geradas pelo `cpuid2cpuflags`, placas de vídeo e pacotes essenciais do sistema base.
-- `01-kernel`: Flags dos pacotes do kernel (`sys-kernel/gentoo-kernel`, `sys-kernel/installkernel`, `sys-kernel/linux-firmware`), assinaturas (`modules-sign`, `secureboot`) e a flag `*/* dist-kernel`.
-- `02-network`: Conectividade e gerenciamento de rede (`net-misc/networkmanager`, `net-wireless/wpa_supplicant`).
-- `03-bootloader`: Carregador de inicialização e assinatura EFI (`sys-boot/grub`, `sys-boot/shim`).
 
-> [!TIP]
-> **Sugestões para expansão futura**:
-> - `04-desktop`: Servidor gráfico (Wayland/X11), áudio (`pipewire`), fontes e bibliotecas gráficas.
-> - `05-apps`: Navegadores, editores de código e aplicações de usuário final.
+#### Diretório `/etc/portage/package.use/`:
+- `00-core`: Flags baseline globais (`*/* X dbus udev opengl pulseaudio pipewire`), flags de arquitetura de CPU (`CPU_FLAGS_X86`) geradas pelo `cpuid2cpuflags`, placas de vídeo (`VIDEO_CARDS`) e dispositivos de entrada (`INPUT_DEVICES`).
+- `01-kernel`: Flags dos pacotes do kernel (`sys-kernel/gentoo-kernel`, `sys-kernel/installkernel`), assinaturas (`modules-sign`, `secureboot`) e a flag `*/* dist-kernel` (mantida comentada até o passo do kernel).
+- `02-network`: Conectividade e gerenciamento de rede (`net-misc/networkmanager`, `net-wireless/wpa_supplicant`, `gnome-extra/nm-applet`).
+- `03-bootloader`: Carregador de inicialização e assinatura EFI (`sys-boot/grub`, `sys-boot/shim`).
+- `04-xorg`: Servidor gráfico X11, utilitários e drivers (`x11-base/xorg-server`, `xf86-input-libinput`, `xinit`, `xrandr`, `xdg-user-dirs`).
+- `05-audio`: Subsistema de áudio moderno com PipeWire, WirePlumber e controle de volume (`pavucontrol`).
+- `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM e bloqueio de tela.
+- `07-services`: Serviços de sistema como Bluetooth (`bluez`, `blueman`), firewall (`ufw`), integração de arquivos (`gvfs`), Flatpak e Polkit.
+- `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, Flameshot e Neovim.
+- `09-fonts`: Subsistema Fontconfig e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
+
+#### Diretório `/etc/portage/package.accept_keywords/`:
+- `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários como `i3lock-color` e `betterlockscreen`.
+- `08-apps`: Libera versões upstream recentes de utilitários como `yazi` e `fastfetch`.
+- `09-fonts`: Libera fontes Nerd Fonts provenientes do repositório GURU.
+
+#### Diretório `/etc/portage/package.license/`:
+- `08-apps`: Aceitação explícita de licença redistribuível para pacotes binários oficiais (ex: `www-client/firefox-bin Mozilla2.0`).
 
 ---
 
@@ -139,7 +150,15 @@ sha256sum --check stage3-*.tar.xz.sha256
 git clone https://github.com/Julio-C-Oliveira/pessoal_gentoo.git /mnt/gentoo/home/pessoal_gentoo
 cp /mnt/gentoo/home/pessoal_gentoo/make.conf /mnt/gentoo/etc/portage/make.conf
 cp -r /mnt/gentoo/home/pessoal_gentoo/package.use /mnt/gentoo/etc/portage/
+cp -r /mnt/gentoo/home/pessoal_gentoo/package.accept_keywords /mnt/gentoo/etc/portage/
+cp -r /mnt/gentoo/home/pessoal_gentoo/package.license /mnt/gentoo/etc/portage/
 ```
+
+> [!WARNING]
+> **ATENÇÃO: Flag `*/* dist-kernel` em `01-kernel`**:
+> O arquivo `package.use/01-kernel` deste repositório vem intencionalmente com a linha `*/* dist-kernel` **comentada**.
+> **Mantenha-a comentada neste momento!**
+> Habilitar `dist-kernel` antes de chegar na etapa de configuração do kernel pode gerar erros de dependências prematuras durante a atualização inicial do conjunto `@world`. Você só deverá descomentá-la na Seção 4 ("Configuring the Linux kernel").
 
 > [!IMPORTANT]
 > **Ajuste o número de jobs no `make.conf`!**
@@ -284,7 +303,12 @@ chown root:root kernel_key.pem
 openssl x509 -in kernel_key.pem -inform PEM -out kernel_key.der -outform DER
 ```
 
-Confira se o arquivo `/etc/portage/package.use/01-kernel` contém as flags de assinatura e o suporte a módulos do kernel distribuído:
+> [!IMPORTANT]
+> **Ponto exato de ativação da flag `*/* dist-kernel`!**
+> Abra o arquivo `/etc/portage/package.use/01-kernel` e **descomente** a linha `*/* dist-kernel`.
+> Ela deve ser ativada **exatamente neste ponto**, antes de compilar o kernel, para que todos os drivers e pacotes que fornecem módulos usem o kernel distribuído (`dist-kernel`). Habilitar antes desta etapa pode causar falhas de compilação ou inconsistências.
+
+Confira se o arquivo `/etc/portage/package.use/01-kernel` contém as flags de assinatura e o suporte a módulos do kernel distribuído ativados:
 ```text
 sys-kernel/installkernel grub dracut
 sys-kernel/gentoo-kernel modules-sign secureboot
@@ -451,3 +475,90 @@ passwd -dl root
 rm -f /stage3-*.tar.*
 emerge --ask --verbose --update --deep --newuse --with-bdeps=y @world
 ```
+
+---
+
+# 9. Installing the Graphical Stack (BSPWM, Áudio e Aplicações)
+
+Após o reboot e a entrada no sistema final instalado, instale a interface gráfica, áudio e ferramentas de usuário utilizando a organização modular de flags configuradas nos arquivos `package.use/`, `package.accept_keywords/` e `package.license/`.
+
+### Habilitando o Repositório Comunitário GURU:
+O GURU funciona de forma análoga ao AUR do Arch Linux e provê pacotes como `i3lock-color`, `betterlockscreen` e as fontes `nerd-fonts`.
+
+```bash
+emerge --ask app-eselect/eselect-repository dev-vcs/git
+eselect repository enable guru
+emaint sync -r guru
+```
+
+### 1. Servidor Gráfico (Xorg):
+As flags estão definidas em `package.use/04-xorg`.
+
+```bash
+emerge --ask x11-base/xorg-server x11-drivers/xf86-input-libinput x11-apps/xinit x11-apps/xrandr x11-misc/xdg-user-dirs
+```
+
+### 2. Subsistema de Áudio (PipeWire + WirePlumber):
+As flags estão definidas em `package.use/05-audio`.
+
+```bash
+emerge --ask media-video/pipewire media-video/wireplumber media-sound/pavucontrol
+```
+
+### 3. Gerenciador de Janelas e Interface (BSPWM + SDDM):
+As flags e keywords estão definidas em `package.use/06-wm-bspwm` e `package.accept_keywords/06-wm-bspwm`.
+
+```bash
+emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst x11-misc/sddm x11-misc/i3lock-color
+```
+
+### 4. Serviços de Sistema e Conectividade:
+As flags estão definidas em `package.use/07-services`.
+
+```bash
+emerge --ask net-wireless/bluez net-wireless/blueman net-firewall/ufw gnome-base/gvfs sys-apps/flatpak gnome-extra/polkit-gnome sys-power/brightnessctl
+```
+
+### 5. Aplicações de Usuário:
+As flags, licenças e keywords estão definidas em `package.use/08-apps`, `package.accept_keywords/08-apps` e `package.license/08-apps`.
+
+```bash
+emerge --ask www-client/firefox-bin x11-terms/kitty app-misc/yazi media-gfx/feh media-gfx/flameshot x11-misc/lxappearance app-misc/fastfetch app-editors/neovim app-editors/vim app-arch/p7zip dev-vcs/git app-admin/stow net-misc/curl net-misc/wget dev-util/github-cli
+```
+
+### 6. Tipografia e Fontes:
+As flags e keywords estão definidas em `package.use/09-fonts` e `package.accept_keywords/09-fonts`.
+
+```bash
+emerge --ask media-fonts/fira-code media-fonts/noto media-fonts/noto-cjk media-fonts/noto-emoji media-fonts/nerd-fonts
+```
+
+### 7. Ativação dos Serviços:
+
+**Serviços de Sistema (root):**
+```bash
+systemctl enable sddm.service
+systemctl enable bluetooth.service
+systemctl enable ufw.service
+```
+
+Configuração básica do firewall UFW:
+```bash
+ufw default deny incoming
+ufw default allow outgoing
+ufw --force enable
+```
+
+**Serviços de Áudio do Usuário (executar como seu usuário comum):**
+```bash
+systemctl --user enable --now pipewire.service pipewire-pulse.service wireplumber.service
+```
+
+### 8. Aplicando seus Dotfiles com GNU Stow:
+Como o seu usuário comum (`tux`):
+```bash
+cd ~/dotfiles
+mkdir -p ~/.config
+stow bash git bspwm sxhkd picom polybar rofi kitty yazi
+```
+

@@ -1,0 +1,32 @@
+# Navegador de internet (Binário oficial Mozilla com suporte a PulseAudio/PipeWire)
+www-client/firefox-bin pulseaudio
+
+# Emulador de terminal acelerado por GPU
+x11-terms/kitty
+
+# Gerenciador de arquivos no terminal
+app-misc/yazi
+
+# Visualizador de imagens e utilitário de papel de parede
+media-gfx/feh
+
+# Captura de tela
+media-gfx/flameshot
+
+# Personalização de temas GTK
+x11-misc/lxappearance
+
+# Informações de sistema no terminal
+app-misc/fastfetch
+
+# Editores de código e texto
+app-editors/neovim lua
+app-editors/vim
+
+# Utilitários de linha de comando
+app-arch/p7zip
+dev-vcs/git
+app-admin/stow
+net-misc/curl
+net-misc/wget
+dev-util/github-cli

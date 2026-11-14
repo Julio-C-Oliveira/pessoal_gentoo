@@ -1,0 +1,19 @@
+# Gerenciador de janelas e teclas de atalho
+x11-wm/bspwm doc
+x11-misc/sxhkd doc
+
+# Barra de status (Polybar integrada com PulseAudio/PipeWire)
+x11-misc/polybar alsa pulseaudio network curl ipc -i3wm
+
+# Compositor (Picom com aceleração OpenGL e backend DBus)
+x11-misc/picom opengl dbus config-file pcre
+
+# Menu de aplicativos e servidor de notificações
+x11-misc/rofi windowmode
+x11-misc/dunst
+
+# Gerenciador de Login (SDDM)
+x11-misc/sddm pam
+
+# Bloqueio de tela
+x11-misc/i3lock-color

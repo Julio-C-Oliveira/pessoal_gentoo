@@ -1,0 +1,4 @@
+# Servidor de áudio PipeWire e gerenciador de sessão WirePlumber
+media-video/pipewire sound-server pipewire-alsa flatpak gstreamer bluetooth extra
+media-video/wireplumber system-service
+media-sound/pavucontrol

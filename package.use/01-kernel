@@ -1,3 +1,6 @@
 sys-kernel/installkernel grub dracut
 sys-kernel/gentoo-kernel modules-sign secureboot
-*/* dist-kernel
+
+# IMPORTANTE: Descomente a flag dist-kernel abaixo SOMENTE no passo "4. Configuring the Linux kernel".
+# Habilitar antes desse ponto pode gerar erros de dependência durante a compilação inicial do sistema base.
+# */* dist-kernel

@@ -1,1 +1,3 @@
 net-wireless/wpa_supplicant dbus
+net-misc/networkmanager wifi bluetooth -elogind
+gnome-extra/nm-applet

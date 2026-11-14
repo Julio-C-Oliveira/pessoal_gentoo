@@ -1,0 +1,19 @@
+# Conectividade Bluetooth
+net-wireless/bluez bt-network
+net-wireless/blueman
+
+# Firewall
+net-firewall/ufw
+
+# Sistema de arquivos virtual (GVFS com suporte a MTP, Samba, Udisks e FUSE)
+gnome-base/gvfs fuse mtp samba udisks http
+
+# Gerenciador de pacotes universais
+sys-apps/flatpak
+
+# Autenticação e privilégios (Polkit)
+sys-auth/polkit
+gnome-extra/polkit-gnome
+
+# Controle de brilho
+sys-power/brightnessctl
