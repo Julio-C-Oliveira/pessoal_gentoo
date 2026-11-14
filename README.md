@@ -455,12 +455,20 @@ echo "tux ALL=(ALL:ALL) ALL" > /etc/sudoers.d/10-tux
 chmod 0440 /etc/sudoers.d/10-tux
 ```
 
-### 4. Limpeza de arquivos temporários:
+### 4. Desabilitando o login direto do root (Hardening de Segurança):
+Com o usuário `tux` devidamente criado e o `sudo` configurado para administração, você pode desabilitar e travar o login por senha direta da conta root:
+```bash
+passwd -dl root
+```
+> [!NOTE]
+> Caso prefira manter uma senha direta de emergência para o root no console, basta não executar esse comando e manter a senha definida no passo 1.
+
+### 5. Limpeza de arquivos temporários:
 ```bash
 rm -f /stage3-*.tar.*
 ```
 
-### 5. Saindo do Chroot e Reiniciando:
+### 6. Saindo do Chroot e Reiniciando:
 Após confirmar que as senhas foram definidas com sucesso:
 ```bash
 exit
