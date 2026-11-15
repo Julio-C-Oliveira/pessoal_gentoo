@@ -2,3 +2,9 @@
 media-video/pipewire sound-server pipewire-alsa flatpak gstreamer bluetooth extra
 media-video/wireplumber system-service
 media-sound/pavucontrol
+
+# Utilitário de controle de volume pelo sxhkd (pactl)
+media-libs/libpulse
+
+# Player multimídia (usado pelo xsecurelock bad_apple_saver e sxhkd)
+media-video/mpv opengl pulseaudio pipewire cli

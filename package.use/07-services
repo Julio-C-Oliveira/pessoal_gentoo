@@ -20,3 +20,9 @@ sys-power/brightnessctl
 
 # Compactação de memória Swap em RAM (ZRAM)
 sys-apps/zram-generator
+
+# Integrações de desktop, área de transferência e notificações
+x11-misc/xclip
+x11-misc/xdg-utils
+x11-libs/libnotify
+gnome-base/dconf

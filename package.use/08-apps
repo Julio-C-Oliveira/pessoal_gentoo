@@ -10,11 +10,11 @@ app-misc/yazi
 # Visualizador de imagens e utilitário de papel de parede
 media-gfx/feh
 
-# Captura de tela
-media-gfx/flameshot
+# Captura de tela pelo sxhkd
+media-gfx/maim
 
-# Personalização de temas GTK
-x11-misc/lxappearance
+# Download de mídia e metadados de áudio
+net-misc/yt-dlp
 
 # Informações de sistema no terminal
 app-misc/fastfetch
@@ -23,8 +23,12 @@ app-misc/fastfetch
 app-editors/neovim lua
 app-editors/vim
 
-# Utilitários de linha de comando
+# Utilitários de busca e linha de comando
+sys-apps/ripgrep
+sys-apps/fd
 app-arch/p7zip
+app-arch/zip
+app-arch/unzip
 dev-vcs/git
 app-admin/stow
 net-misc/curl

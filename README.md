@@ -19,11 +19,11 @@ O uso de **diretórios modulares** é a prática recomendada:
 - `01-kernel`: Flags dos pacotes do kernel (`sys-kernel/gentoo-kernel`, `sys-kernel/installkernel`), assinaturas (`modules-sign`, `secureboot`) e a flag `*/* dist-kernel` (mantida comentada até o passo do kernel).
 - `02-network`: Conectividade e gerenciamento de rede (`net-misc/networkmanager`, `net-wireless/wpa_supplicant`, `gnome-extra/nm-applet`).
 - `03-bootloader`: Carregador de inicialização e assinatura EFI (`sys-boot/grub`, `sys-boot/shim`).
-- `04-xorg`: Servidor gráfico X11, utilitários e drivers (`x11-base/xorg-server`, `xf86-input-libinput`, `xinit`, `xrandr`, `xdg-user-dirs`).
-- `05-audio`: Subsistema de áudio moderno com PipeWire, WirePlumber e controle de volume (`pavucontrol`).
-- `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM e bloqueio de tela.
-- `07-services`: Serviços de sistema como Bluetooth (`bluez`, `blueman`), firewall (`ufw`), integração de arquivos (`gvfs`), Flatpak e Polkit.
-- `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, Flameshot e Neovim.
+- `04-xorg`: Servidor gráfico X11, utilitários e drivers (`x11-base/xorg-server`, `xf86-input-libinput`, `xinit`, `xrandr`, `xhost`, `setxkbmap`, `xdg-user-dirs`).
+- `05-audio`: Subsistema de áudio moderno com PipeWire, WirePlumber, controle de volume (`pavucontrol`, `libpulse`) e player multimídia (`mpv`).
+- `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM, bloqueio de tela (`xsecurelock`) e temas (`qt5ct`, `qt6ct`, `lxappearance`, `numlockx`).
+- `07-services`: Serviços de sistema como Bluetooth (`bluez`, `blueman`), firewall (`ufw`), integração de arquivos (`gvfs`), Flatpak, Polkit, clipboard (`xclip`), notificações (`libnotify`), `xdg-utils` e ZRAM.
+- `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, captura com Maim, `yt-dlp`, busca (`ripgrep`, `fd`), descompactadores (`zip`, `unzip`, `p7zip`) e Neovim.
 - `09-fonts`: Subsistema Fontconfig e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
 
 #### Diretório `/etc/portage/package.accept_keywords/`:
@@ -540,35 +540,35 @@ emaint sync -r guru
 As flags estão definidas em `package.use/04-xorg`.
 
 ```bash
-emerge --ask x11-base/xorg-server x11-drivers/xf86-input-libinput x11-apps/xinit x11-apps/xrandr x11-misc/xdg-user-dirs
+emerge --ask x11-base/xorg-server x11-drivers/xf86-input-libinput x11-apps/xinit x11-apps/xrandr x11-apps/xhost x11-apps/setxkbmap x11-misc/xdg-user-dirs
 ```
 
-### 2. Subsistema de Áudio (PipeWire + WirePlumber):
+### 2. Subsistema de Áudio (PipeWire + WirePlumber + MPV):
 As flags estão definidas em `package.use/05-audio`.
 
 ```bash
-emerge --ask media-video/pipewire media-video/wireplumber media-sound/pavucontrol
+emerge --ask media-video/pipewire media-video/wireplumber media-sound/pavucontrol media-libs/libpulse media-video/mpv
 ```
 
-### 3. Gerenciador de Janelas e Interface (BSPWM + SDDM):
+### 3. Gerenciador de Janelas, Interface e Temas (BSPWM + SDDM):
 As flags e keywords estão definidas em `package.use/06-wm-bspwm` e `package.accept_keywords/06-wm-bspwm`.
 
 ```bash
-emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst x11-misc/sddm x11-misc/xsecurelock
+emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst x11-misc/sddm x11-misc/xsecurelock x11-misc/lxappearance x11-themes/gnome-themes-extra dev-qt/qt5ct dev-qt/qt6ct x11-misc/numlockx
 ```
 
 ### 4. Serviços de Sistema e Conectividade:
 As flags estão definidas em `package.use/07-services`.
 
 ```bash
-emerge --ask net-wireless/bluez net-wireless/blueman net-firewall/ufw gnome-base/gvfs sys-apps/flatpak gnome-extra/polkit-gnome sys-power/brightnessctl
+emerge --ask net-misc/networkmanager gnome-extra/nm-applet net-wireless/bluez net-wireless/blueman net-firewall/ufw gnome-base/gvfs sys-apps/flatpak gnome-extra/polkit-gnome sys-power/brightnessctl x11-misc/xclip x11-misc/xdg-utils x11-libs/libnotify gnome-base/dconf
 ```
 
 ### 5. Aplicações de Usuário:
 As flags, licenças e keywords estão definidas em `package.use/08-apps`, `package.accept_keywords/08-apps` e `package.license/08-apps`.
 
 ```bash
-emerge --ask www-client/firefox-bin x11-terms/kitty app-misc/yazi media-gfx/feh media-gfx/flameshot x11-misc/lxappearance app-misc/fastfetch app-editors/neovim app-editors/vim app-arch/p7zip dev-vcs/git app-admin/stow net-misc/curl net-misc/wget dev-util/github-cli
+emerge --ask www-client/firefox-bin x11-terms/kitty app-misc/yazi media-gfx/feh media-gfx/maim net-misc/yt-dlp app-misc/fastfetch app-editors/neovim app-editors/vim sys-apps/ripgrep sys-apps/fd app-arch/p7zip app-arch/zip app-arch/unzip dev-vcs/git app-admin/stow net-misc/curl net-misc/wget dev-util/github-cli
 ```
 
 ### 6. Tipografia e Fontes:
@@ -603,8 +603,8 @@ systemctl --user enable --now pipewire.service pipewire-pulse.service wireplumbe
 Como o seu usuário comum (`tux`):
 ```bash
 cd ~/dotfiles
-mkdir -p ~/.config
-stow bash git bspwm sxhkd picom polybar rofi kitty yazi
+mkdir -p ~/.config ~/.local/bin
+stow bash git bspwm sxhkd picom polybar rofi kitty yazi theme dirs xsecurelock
 ```
 
 ---

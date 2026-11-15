@@ -17,3 +17,10 @@ x11-misc/sddm pam
 
 # Bloqueio de tela (xsecurelock com PAM)
 x11-misc/xsecurelock pam
+
+# Personalização visual e temas (GTK e Qt)
+x11-misc/lxappearance
+x11-themes/gnome-themes-extra
+dev-qt/qt5ct
+dev-qt/qt6ct
+x11-misc/numlockx
