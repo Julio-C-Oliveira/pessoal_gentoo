@@ -554,7 +554,7 @@ emerge --ask media-video/pipewire media-video/wireplumber media-sound/pavucontro
 As flags e keywords estão definidas em `package.use/06-wm-bspwm` e `package.accept_keywords/06-wm-bspwm`.
 
 ```bash
-emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst x11-misc/sddm x11-misc/xsecurelock x11-misc/lxappearance x11-themes/gnome-themes-extra dev-qt/qt5ct dev-qt/qt6ct x11-misc/numlockx
+emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst gui-apps/sddm x11-misc/xsecurelock lxde-base/lxappearance x11-themes/gnome-themes-standard gui-apps/qt6ct x11-misc/numlockx
 ```
 
 ### 4. Serviços de Sistema e Conectividade:
