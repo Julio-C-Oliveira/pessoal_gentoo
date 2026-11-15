@@ -673,7 +673,33 @@ cat /proc/sys/vm/swappiness
 
 ---
 
-# 11. Guia Rápido de Comandos e Manutenção do Gentoo (Portage Cheat Sheet)
+# 11. Final System Update and Cleanup (@world)
+
+Após a conclusão da instalação da interface gráfica, serviços, aplicativos e configuração do ZRAM, execute uma atualização e recompilação final preventiva do conjunto `@world`.
+
+Este procedimento garante que:
+- Quaisquer pacotes cujas flags foram modificadas ou adicionadas no `package.use/` durante a instalação sejam devidamente recompilados para aplicar as novas opções.
+- Todas as dependências do sistema fiquem 100% alinhadas com as flags globais (`00-core`).
+- Bibliotecas antigas ou dependências temporárias de compilação sejam removidas de forma limpa.
+
+### 1. Recompilação profunda com as novas flags:
+```bash
+sudo emerge --ask --verbose --update --deep --changed-use @world
+```
+
+### 2. Remoção de dependências órfãs e limpeza:
+```bash
+sudo emerge --ask --depclean
+```
+
+### 3. Recompilação preventiva de bibliotecas preservadas (se houver):
+```bash
+sudo emerge @preserved-rebuild
+```
+
+---
+
+# 12. Guia Rápido de Comandos e Manutenção do Gentoo (Portage Cheat Sheet)
 
 Um guia prático com os comandos e fluxos essenciais para o dia a dia e manutenção contínua do seu Gentoo Linux.
 
