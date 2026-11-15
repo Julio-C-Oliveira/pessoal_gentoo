@@ -7,6 +7,8 @@ net-firewall/ufw
 
 # Sistema de arquivos virtual (GVFS com suporte a MTP, Samba, Udisks e FUSE)
 gnome-base/gvfs fuse mtp samba udisks http
+net-fs/samba client
+net-libs/ngtcp2 gnutls
 
 # Gerenciador de pacotes universais
 sys-apps/flatpak
@@ -14,6 +16,9 @@ sys-apps/flatpak
 # Autenticação e privilégios (Polkit)
 sys-auth/polkit
 gnome-extra/polkit-gnome
+sys-apps/systemd policykit
+app-crypt/gcr:0 gtk
+app-crypt/gcr gtk
 
 # Controle de brilho
 app-misc/brightnessctl systemd udev
