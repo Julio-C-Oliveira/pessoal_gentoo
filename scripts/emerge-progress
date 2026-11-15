@@ -1,0 +1,617 @@
+#!/usr/bin/env python3
+"""
+emerge-progress: Monitor em tempo real do progresso das instalações do Portage (Gentoo).
+
+Suporta múltiplos sistemas de compilação:
+- Ninja / Meson (etapas [X/Y] nativas)
+- CMake (porcentagem [X%] nativa)
+- Cargo / Rust (crates e etapas)
+- GNU Make / Autotools (estimativa histórica via emerge.log + contador de objetos .o)
+
+Além disso, monitora o progresso global da fila do emerge e a fase atual do pacote.
+"""
+
+import sys
+import os
+import re
+import time
+import glob
+import shutil
+import signal
+import argparse
+from typing import Optional, Tuple, Dict, Any, List
+
+# Códigos de escape ANSI para formatação e cores no terminal
+class Colors:
+    def __init__(self, enabled: bool = True):
+        self.enabled = enabled and sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+        self.RESET = "\033[0m" if self.enabled else ""
+        self.BOLD = "\033[1m" if self.enabled else ""
+        self.DIM = "\033[2m" if self.enabled else ""
+        self.RED = "\033[31m" if self.enabled else ""
+        self.GREEN = "\033[32m" if self.enabled else ""
+        self.YELLOW = "\033[33m" if self.enabled else ""
+        self.BLUE = "\033[34m" if self.enabled else ""
+        self.MAGENTA = "\033[35m" if self.enabled else ""
+        self.CYAN = "\033[36m" if self.enabled else ""
+        self.WHITE = "\033[37m" if self.enabled else ""
+        self.GRAY = "\033[90m" if self.enabled else ""
+        self.HIDE_CURSOR = "\033[?25l" if self.enabled else ""
+        self.SHOW_CURSOR = "\033[?25h" if self.enabled else ""
+        self.CLEAR_LINE = "\033[2K" if self.enabled else ""
+        self.UP_LINE = "\033[1A" if self.enabled else ""
+
+
+def format_duration(seconds: float) -> str:
+    """Formata segundos em representação legível (ex: 2m 14s ou 1h 05m)."""
+    if seconds < 0:
+        seconds = 0
+    s = int(seconds)
+    m, s = divmod(s, 60)
+    h, m = divmod(m, 60)
+    if h > 0:
+        return f"{h}h {m:02d}m"
+    if m > 0:
+        return f"{m}m {s:02d}s"
+    return f"{s}s"
+
+
+def clean_pkg_name(raw_name: str) -> str:
+    """Extrai nome do pacote sem slot/versão/repositório para comparação (ex: 'media-video/ffmpeg-6.1' -> 'media-video/ffmpeg')."""
+    # Remove ::repo
+    name = raw_name.split("::")[0]
+    # Remove categoria do prefixo para análise de versão se necessário, ou regex padrão portage:
+    # Categoria/nome-versao
+    match = re.match(r"^([^/]+/[a-zA-Z0-9_\+\-]+?)(?:-\d+.*)?$", name)
+    if match:
+        return match.group(1)
+    return name
+
+
+class EmergeLogWatcher:
+    """Analisa o arquivo /var/log/emerge.log para monitorar fila e histórico."""
+
+    def __init__(self, log_path: str = "/var/log/emerge.log"):
+        self.log_path = log_path
+        self._history_cache: Dict[str, float] = {}
+
+    def get_current_state(self) -> Dict[str, Any]:
+        """Lê os eventos mais recentes do emerge.log."""
+        state = {
+            "active": False,
+            "current_idx": 0,
+            "total_pkgs": 0,
+            "package": "",
+            "raw_package": "",
+            "phase": "",
+            "phase_start_time": 0.0,
+            "emerge_start_time": 0.0,
+        }
+
+        if not os.path.exists(self.log_path):
+            return state
+
+        try:
+            # Lê as últimas linhas do log (máx 128KB do final)
+            with open(self.log_path, "r", encoding="utf-8", errors="replace") as f:
+                f.seek(0, os.SEEK_END)
+                size = f.tell()
+                f.seek(max(0, size - 131072))
+                lines = f.readlines()
+        except Exception:
+            return state
+
+        # Expressões regulares padrão do Portage elog / emerge.log
+        re_start = re.compile(r"^(\d+):\s+Started emerge on:")
+        re_finished = re.compile(r"^(\d+):\s+\*\*\*\s+Finished\.")
+        re_exit = re.compile(r"^(\d+):\s+\*\*\*\s+exiting")
+        re_queue = re.compile(r"^(\d+):\s+\*\*\*\s+emerge\s+\((\d+)\s+of\s+(\d+)\)\s+([^\s]+)\s+to")
+        re_phase = re.compile(r"^(\d+):\s+===\s+\((\d+)\s+of\s+(\d+)\)\s+([^\(]+?)\s*\(([^\)]+)\)")
+        re_completed = re.compile(r"^(\d+):\s+===\s+\((\d+)\s+of\s+(\d+)\)\s+Completed installation")
+
+        last_start = 0.0
+        last_finished = 0.0
+        current_queue_match = None
+        last_phase_match = None
+        last_completed_match = None
+
+        for line in lines:
+            line = line.strip()
+            m_s = re_start.match(line)
+            if m_s:
+                last_start = float(m_s.group(1))
+                continue
+            m_f = re_finished.match(line) or re_exit.match(line)
+            if m_f:
+                last_finished = float(m_f.group(1))
+                continue
+            m_q = re_queue.match(line)
+            if m_q:
+                current_queue_match = m_q
+                continue
+            m_p = re_phase.match(line)
+            if m_p:
+                last_phase_match = m_p
+                if "Completed installation" in line:
+                    last_completed_match = m_p
+                continue
+
+        # Verifica se o emerge está ativo
+        # O emerge está ativo se o último 'Started emerge' é mais recente que 'Finished'
+        # ou se o último evento de fila/fase ocorreu recentemente (< 10 minutos)
+        now = time.time()
+        is_active = (last_start > last_finished)
+
+        if current_queue_match:
+            q_time = float(current_queue_match.group(1))
+            cur_idx = int(current_queue_match.group(2))
+            tot_idx = int(current_queue_match.group(3))
+            pkg = current_queue_match.group(4)
+
+            # Se last_finished não foi registrado ainda mas passou muito tempo (> 30 min sem log), pode estar inativo
+            if is_active or (now - q_time < 1800):
+                state["active"] = True
+                state["current_idx"] = cur_idx
+                state["total_pkgs"] = tot_idx
+                state["raw_package"] = pkg
+                state["package"] = pkg
+                state["emerge_start_time"] = last_start or q_time
+
+        if last_phase_match and state["active"]:
+            p_time = float(last_phase_match.group(1))
+            phase_name = last_phase_match.group(4).strip()
+            pkg_phase = last_phase_match.group(5).strip()
+            state["phase"] = phase_name
+            state["phase_start_time"] = p_time
+            if not state["package"]:
+                state["package"] = pkg_phase.split("::")[0]
+                state["raw_package"] = pkg_phase
+
+        return state
+
+    def get_historical_compile_time(self, package_name: str) -> Optional[float]:
+        """Busca no emerge.log compilações anteriores bem-sucedidas do mesmo pacote para calcular tempo médio."""
+        base_pkg = clean_pkg_name(package_name)
+        if base_pkg in self._history_cache:
+            return self._history_cache[base_pkg]
+
+        if not os.path.exists(self.log_path):
+            return None
+
+        durations: List[float] = []
+        try:
+            with open(self.log_path, "r", encoding="utf-8", errors="replace") as f:
+                # Lê o log procurando blocos Compiling/Packaging -> Merging para o pacote
+                re_comp = re.compile(r"^(\d+):\s+===\s+\(\d+\s+of\s+\d+\)\s+Compiling/Packaging\s*\(([^:]+)")
+                re_merge = re.compile(r"^(\d+):\s+===\s+\(\d+\s+of\s+\d+\)\s+Merging\s*\(([^:]+)")
+
+                current_compile_start: Optional[float] = None
+                for line in f:
+                    m_c = re_comp.match(line)
+                    if m_c:
+                        pkg_in_log = m_c.group(2).strip()
+                        if clean_pkg_name(pkg_in_log) == base_pkg:
+                            current_compile_start = float(m_c.group(1))
+                        continue
+
+                    m_m = re_merge.match(line)
+                    if m_m and current_compile_start is not None:
+                        pkg_in_log = m_m.group(2).strip()
+                        if clean_pkg_name(pkg_in_log) == base_pkg:
+                            end_time = float(m_m.group(1))
+                            duration = end_time - current_compile_start
+                            if duration > 1.0:
+                                durations.append(duration)
+                            current_compile_start = None
+        except Exception:
+            return None
+
+        if durations:
+            # Média das últimas 3 compilações
+            recent = durations[-3:]
+            avg_time = sum(recent) / len(recent)
+            self._history_cache[base_pkg] = avg_time
+            return avg_time
+
+        return None
+
+
+class BuildLogParser:
+    """Localiza e analisa em tempo real o arquivo /var/tmp/portage/*/*/temp/build.log."""
+
+    def __init__(self, portage_tmp_dir: str = "/var/tmp/portage"):
+        self.portage_tmp_dir = portage_tmp_dir
+        self.current_log_file: Optional[str] = None
+        self.file_pos = 0
+        self.last_mtime = 0.0
+
+        # Estado da compilação
+        self.build_system: str = "Desconhecido"
+        self.current_step: int = 0
+        self.total_steps: int = 0
+        self.percentage: Optional[float] = None
+        self.current_target: str = ""
+        self.objects_compiled: int = 0
+        self.start_tracking_time: float = time.time()
+        self.package_name: str = ""
+
+        # Regex para sistemas de build
+        # 1. Ninja / Meson: [ 12/345] ou [12/345]
+        self.re_ninja = re.compile(r"^\[\s*(\d+)/(\d+)\s*\]\s*(.*)$")
+        # 2. CMake Makefiles: [ 45%] Building C object ...
+        self.re_cmake = re.compile(r"^\[\s*(\d+)%\]\s*(.*)$")
+        # 3. Cargo / Rust: Compiling crate v0.1.0 (X/Y) ou Compiling crate v0.1.0
+        self.re_cargo_progress = re.compile(r"^\s*Compiling\s+\S+\s+v\S+\s*\((\d+)/(\d+)\)")
+        self.re_cargo = re.compile(r"^\s*Compiling\s+(\S+)\s+v([^\s]+)")
+        # 4. GNU Make / Autotools (linhas de compilação C/C++/libtool)
+        self.re_compiler = re.compile(
+            r"(?:^|\s)(?:[a-zA-Z0-9_\-\+]+-(?:gcc|g\+\+|clang|clang\+\+)|gcc|g\+\+|clang|clang\+\+|cc|c\+\+)\s+.*-c\s+.*?(?:-o\s+([^\s]+)|(\S+\.[cCop]+))"
+        )
+        self.re_silent_make = re.compile(r"^\s*(?:CC|CXX|AR|LD)\s+(?:\[M\]\s+)?(\S+)")
+        self.re_libtool = re.compile(r"libtool:\s+compile:\s+.*-c\s+.*?-o\s+([^\s]+)")
+
+    def find_latest_build_log(self) -> Optional[str]:
+        """Procura o build.log ativo mais recente em /var/tmp/portage/*/*/temp/build.log."""
+        pattern = os.path.join(self.portage_tmp_dir, "*", "*", "temp", "build.log")
+        matches = glob.glob(pattern)
+        if not matches:
+            return None
+
+        # Ordena pelo mtime mais recente
+        try:
+            latest = max(matches, key=lambda f: os.path.getmtime(f))
+            # Se o arquivo foi modificado há menos de 10 minutos, está potencialmente ativo
+            if time.time() - os.path.getmtime(latest) < 600:
+                return latest
+        except Exception:
+            return None
+        return None
+
+    def update(self, historical_time: Optional[float] = None, phase_start_time: float = 0.0) -> None:
+        """Lê novas linhas do log ativo e atualiza as estatísticas de progresso."""
+        latest_log = self.find_latest_build_log()
+
+        if not latest_log:
+            self.current_log_file = None
+            return
+
+        # Se mudou de arquivo (novo pacote sendo compilado)
+        if latest_log != self.current_log_file:
+            self.current_log_file = latest_log
+            self.file_pos = 0
+            self.build_system = "Detectando..."
+            self.current_step = 0
+            self.total_steps = 0
+            self.percentage = None
+            self.current_target = ""
+            self.objects_compiled = 0
+            self.start_tracking_time = time.time()
+
+            # Extrai nome do pacote do caminho: /var/tmp/portage/categoria/pacote-versao/temp/build.log
+            parts = latest_log.split(os.sep)
+            if len(parts) >= 4:
+                self.package_name = f"{parts[-4]}/{parts[-3]}"
+
+        try:
+            file_size = os.path.getsize(latest_log)
+            # Se o arquivo diminuiu ou é novo, reinicia seek
+            if file_size < self.file_pos:
+                self.file_pos = 0
+
+            with open(latest_log, "r", encoding="utf-8", errors="replace") as f:
+                f.seek(self.file_pos)
+                chunk = f.read(1048576) # Lê blocos de até 1MB por vez
+                if chunk:
+                    self.file_pos = f.tell()
+                    self._process_chunk(chunk)
+        except Exception:
+            pass
+
+        # Se for Make/Autotools (ou desconhecido com compilador ativo) e tiver histórico de tempo
+        if self.build_system in ("Make/Autotools", "Detectando...", "Cargo (Rust)"):
+            if self.percentage is None and historical_time and historical_time > 0:
+                base_time = phase_start_time if phase_start_time > 0 else self.start_tracking_time
+                elapsed = max(0.0, time.time() - base_time)
+                # Estima a porcentagem baseada no tempo decorrido vs histórico (máx 99% até concluir)
+                estimated_pct = min(99.0, max(1.0, (elapsed / historical_time) * 100.0))
+                self.percentage = estimated_pct
+
+    def _process_chunk(self, chunk: str) -> None:
+        """Analisa o texto do log para atualizar contadores e percentuais."""
+        lines = chunk.splitlines()
+        for line in lines:
+            line_str = line.strip()
+            if not line_str:
+                continue
+
+            # 1. Ninja / Meson
+            m_ninja = self.re_ninja.match(line_str)
+            if m_ninja:
+                self.build_system = "Ninja"
+                self.current_step = int(m_ninja.group(1))
+                self.total_steps = int(m_ninja.group(2))
+                if self.total_steps > 0:
+                    self.percentage = (self.current_step / self.total_steps) * 100.0
+                target = m_ninja.group(3).strip()
+                if target:
+                    self.current_target = target
+                continue
+
+            # 2. CMake Makefiles
+            m_cmake = self.re_cmake.match(line_str)
+            if m_cmake:
+                self.build_system = "CMake"
+                self.percentage = float(m_cmake.group(1))
+                target = m_cmake.group(2).strip()
+                if target:
+                    self.current_target = target
+                continue
+
+            # 3. Cargo com (X/Y)
+            m_cargo_p = self.re_cargo_progress.match(line_str)
+            if m_cargo_p:
+                self.build_system = "Cargo"
+                self.current_step = int(m_cargo_p.group(1))
+                self.total_steps = int(m_cargo_p.group(2))
+                if self.total_steps > 0:
+                    self.percentage = (self.current_step / self.total_steps) * 100.0
+                continue
+
+            # 4. Cargo crates padrão
+            m_cargo = self.re_cargo.match(line_str)
+            if m_cargo:
+                self.build_system = "Cargo (Rust)"
+                self.objects_compiled += 1
+                self.current_target = f"{m_cargo.group(1)} v{m_cargo.group(2)}"
+                continue
+
+            # 5. Make / Silent rules (CC foo.o)
+            m_silent = self.re_silent_make.match(line_str)
+            if m_silent:
+                self.build_system = "Make/Autotools"
+                self.objects_compiled += 1
+                self.current_target = m_silent.group(1)
+                continue
+
+            # 6. Libtool compile
+            m_libtool = self.re_libtool.search(line_str)
+            if m_libtool:
+                self.build_system = "Make/Autotools"
+                self.objects_compiled += 1
+                self.current_target = m_libtool.group(1)
+                continue
+
+            # 7. Invocação direta de compilador (gcc/clang/cc)
+            m_comp = self.re_compiler.search(line_str)
+            if m_comp:
+                self.build_system = "Make/Autotools"
+                self.objects_compiled += 1
+                target = m_comp.group(1) or m_comp.group(2)
+                if target:
+                    self.current_target = os.path.basename(target)
+                continue
+
+
+def draw_progress_bar(percentage: Optional[float], width: int = 30, color: Colors = None) -> str:
+    """Desenha uma barra gráfica textual ANSI de progresso (ex: [████████░░░░░░░░] 50.0%)."""
+    c = color or Colors(False)
+    if percentage is None:
+        # Spinner / barra indeterminada pulsante
+        t = int(time.time() * 4) % max(1, width - 4)
+        bar = " " * t + "<===>" + " " * max(0, width - t - 5)
+        bar = bar[:width]
+        return f"{c.GRAY}[{c.CYAN}{bar}{c.GRAY}]{c.RESET} {c.DIM}---%{c.RESET}"
+
+    pct = max(0.0, min(100.0, percentage))
+    filled_len = int(round(width * pct / 100.0))
+    empty_len = width - filled_len
+
+    filled_char = "█"
+    empty_char = "░"
+
+    bar = (c.GREEN + filled_char * filled_len) + (c.GRAY + empty_char * empty_len)
+    pct_text = f"{c.BOLD}{pct:5.1f}%{c.RESET}"
+    return f"{c.GRAY}[{bar}{c.GRAY}]{c.RESET} {pct_text}"
+
+
+def render_display(
+    emerge_state: Dict[str, Any],
+    build_parser: BuildLogParser,
+    historical_time: Optional[float],
+    colors: Colors,
+    single_line: bool = False
+) -> str:
+    """Formata as informações de progresso para exibição no terminal."""
+    pkg = emerge_state.get("package") or build_parser.package_name or "Desconhecido"
+    cur_idx = emerge_state.get("current_idx", 0)
+    tot_idx = emerge_state.get("total_pkgs", 0)
+    phase = emerge_state.get("phase", "Compiling")
+
+    # Informações de tempo
+    now = time.time()
+    phase_start = emerge_state.get("phase_start_time", 0.0)
+    elapsed = max(0.0, now - phase_start) if phase_start > 0 else (now - build_parser.start_tracking_time)
+    elapsed_str = format_duration(elapsed)
+
+    # Cálculo de ETA
+    eta_str = "--"
+    if build_parser.percentage and build_parser.percentage > 0 and build_parser.percentage < 100:
+        if build_parser.build_system in ("Ninja", "CMake") and elapsed > 2.0:
+            total_est = (elapsed / build_parser.percentage) * 100.0
+            eta_val = max(0.0, total_est - elapsed)
+            eta_str = format_duration(eta_val)
+        elif historical_time and historical_time > elapsed:
+            eta_str = format_duration(historical_time - elapsed)
+    elif historical_time and historical_time > elapsed:
+        eta_str = format_duration(historical_time - elapsed)
+
+    # Detalhe do sistema de build
+    if build_parser.build_system == "Ninja" and build_parser.total_steps > 0:
+        build_detail = f"Ninja [{build_parser.current_step}/{build_parser.total_steps}]"
+    elif build_parser.build_system == "CMake":
+        build_detail = f"CMake"
+    elif build_parser.build_system == "Cargo" and build_parser.total_steps > 0:
+        build_detail = f"Cargo [{build_parser.current_step}/{build_parser.total_steps}]"
+    elif build_parser.objects_compiled > 0:
+        build_detail = f"{build_parser.build_system} ({build_parser.objects_compiled} objs)"
+    else:
+        build_detail = build_parser.build_system
+
+    term_width = shutil.get_terminal_size((80, 24)).columns
+    bar_width = max(15, min(35, term_width - 50))
+    bar = draw_progress_bar(build_parser.percentage, width=bar_width, color=colors)
+
+    queue_str = f"[{cur_idx}/{tot_idx}]" if tot_idx > 0 else ""
+
+    if single_line:
+        # Formato compacto para --once ou statusbar
+        pct_display = f"{build_parser.percentage:4.1f}%" if build_parser.percentage is not None else "--%"
+        return f"{queue_str} {pkg} ({phase}) | {bar} | {build_detail} | {elapsed_str} (ETA: {eta_str})"
+
+    # Formato padrão multi-linha polido
+    target_info = ""
+    if build_parser.current_target:
+        # Trunca o target se for muito longo
+        avail_target_len = max(20, term_width - 30)
+        tgt = build_parser.current_target
+        if len(tgt) > avail_target_len:
+            tgt = "..." + tgt[-(avail_target_len - 3):]
+        target_info = f" {colors.GRAY}>>{colors.RESET} {colors.DIM}{tgt}{colors.RESET}"
+
+    line1 = (
+        f"{colors.BOLD}{colors.CYAN}Portage{colors.RESET} "
+        f"{colors.YELLOW}{queue_str}{colors.RESET} "
+        f"{colors.BOLD}{colors.WHITE}{pkg}{colors.RESET} "
+        f"{colors.GRAY}[{colors.MAGENTA}{phase}{colors.GRAY}]{colors.RESET}"
+    )
+
+    hist_indicator = f" {colors.DIM}(hist: {format_duration(historical_time)}){colors.RESET}" if historical_time else ""
+    line2 = (
+        f"  {bar} "
+        f"{colors.GRAY}|{colors.RESET} {colors.CYAN}{build_detail}{colors.RESET} "
+        f"{colors.GRAY}|{colors.RESET} {colors.WHITE}{elapsed_str}{colors.RESET}"
+        f"{colors.DIM} (ETA: {eta_str}){colors.RESET}"
+        f"{hist_indicator}"
+        f"{target_info}"
+    )
+
+    return f"{line1}\n{line2}"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Monitor em tempo real do progresso das instalações do Portage (emerge)."
+    )
+    parser.add_argument(
+        "-o", "--once",
+        action="store_true",
+        help="Imprime o status atual em uma única linha e sai imediatamente (útil para waybar/tmux)."
+    )
+    parser.add_argument(
+        "-i", "--interval",
+        type=float,
+        default=0.5,
+        help="Intervalo de atualização em segundos no modo contínuo (padrão: 0.5s)."
+    )
+    parser.add_argument(
+        "--emerge-log",
+        default="/var/log/emerge.log",
+        help="Caminho do arquivo emerge.log (padrão: /var/log/emerge.log)."
+    )
+    parser.add_argument(
+        "--portage-tmp",
+        default="/var/tmp/portage",
+        help="Caminho do diretório temporário do portage (padrão: /var/tmp/portage)."
+    )
+    parser.add_argument(
+        "--no-color",
+        action="store_true",
+        help="Desativa cores e códigos ANSI."
+    )
+
+    args = parser.parse_args()
+
+    colors = Colors(enabled=not args.no_color)
+    emerge_watcher = EmergeLogWatcher(log_path=args.emerge_log)
+    build_parser = BuildLogParser(portage_tmp_dir=args.portage_tmp)
+
+    # Restaura cursor ao sair (SIGINT / Ctrl+C)
+    def handle_sigint(signum, frame):
+        if colors.enabled:
+            sys.stdout.write(f"\n{colors.SHOW_CURSOR}")
+            sys.stdout.flush()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handle_sigint)
+
+    # Se for modo --once (snapshot)
+    if args.once:
+        emerge_state = emerge_watcher.get_current_state()
+        hist_time = None
+        if emerge_state.get("package"):
+            hist_time = emerge_watcher.get_historical_compile_time(emerge_state["package"])
+        build_parser.update(historical_time=hist_time, phase_start_time=emerge_state.get("phase_start_time", 0.0))
+
+        if not emerge_state.get("active") and not build_parser.current_log_file:
+            print("Nenhum emerge em execução.")
+            return 0
+
+        print(render_display(emerge_state, build_parser, hist_time, colors, single_line=True))
+        return 0
+
+    # Modo contínuo (Live)
+    if colors.enabled:
+        sys.stdout.write(colors.HIDE_CURSOR)
+        sys.stdout.flush()
+
+    last_lines_count = 0
+
+    try:
+        while True:
+            emerge_state = emerge_watcher.get_current_state()
+            active_pkg = emerge_state.get("package")
+            hist_time = None
+            if active_pkg:
+                hist_time = emerge_watcher.get_historical_compile_time(active_pkg)
+
+            build_parser.update(historical_time=hist_time, phase_start_time=emerge_state.get("phase_start_time", 0.0))
+
+            is_active = emerge_state.get("active") or (build_parser.current_log_file is not None)
+
+            if not is_active:
+                # Limpa linhas anteriores se houver
+                if last_lines_count > 0:
+                    sys.stdout.write(f"\r{colors.CLEAR_LINE}")
+                sys.stdout.write(f"\r{colors.YELLOW}Nenhum emerge ativo no momento. Aguardando...{colors.RESET}\r")
+                sys.stdout.flush()
+                last_lines_count = 1
+                time.sleep(args.interval * 2)
+                continue
+
+            output = render_display(emerge_state, build_parser, hist_time, colors, single_line=False)
+            output_lines = output.split("\n")
+
+            # Retorna o cursor para atualizar no mesmo lugar da tela
+            if last_lines_count > 0:
+                for _ in range(last_lines_count - 1):
+                    sys.stdout.write(f"{colors.UP_LINE}{colors.CLEAR_LINE}")
+                sys.stdout.write(f"\r{colors.CLEAR_LINE}")
+
+            sys.stdout.write(output + "\n")
+            sys.stdout.flush()
+            last_lines_count = len(output_lines)
+
+            time.sleep(args.interval)
+
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if colors.enabled:
+            sys.stdout.write(f"{colors.SHOW_CURSOR}\n")
+            sys.stdout.flush()
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
