@@ -21,8 +21,6 @@ x11-misc/xsecurelock pam
 # Personalização visual e temas (GTK e Qt)
 lxde-base/lxappearance
 x11-themes/gnome-themes-standard
-x11-themes/gnome-themes-extra
-gui-apps/qt5ct
 gui-apps/qt6ct
 x11-misc/numlockx
 

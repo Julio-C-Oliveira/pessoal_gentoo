@@ -21,7 +21,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 - `03-bootloader`: Carregador de inicialização e assinatura EFI (`sys-boot/grub`, `sys-boot/shim`).
 - `04-xorg`: Servidor gráfico X11, utilitários e drivers (`x11-base/xorg-server`, `xf86-input-libinput`, `xinit`, `xrandr`, `xhost`, `setxkbmap`, `xdg-user-dirs`).
 - `05-audio`: Subsistema de áudio moderno com PipeWire, WirePlumber, controle de volume (`pavucontrol`, `libpulse`) e player multimídia (`mpv`).
-- `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM, bloqueio de tela (`xsecurelock`) e temas (`qt5ct`, `qt6ct`, `lxappearance`, `numlockx`).
+- `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM, bloqueio de tela (`xsecurelock`) e temas (`qt6ct`, `lxappearance`, `numlockx`).
 - `07-services`: Serviços de sistema como Bluetooth (`bluez`, `blueman`), firewall (`ufw`), integração de arquivos (`gvfs`), Flatpak, Polkit, clipboard (`xclip`), notificações (`libnotify`), `xdg-utils` e ZRAM.
 - `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, captura com Maim, `yt-dlp`, busca (`ripgrep`, `fd`), descompactadores (`zip`, `unzip`, `p7zip`) e Neovim.
 - `09-fonts`: Subsistema Fontconfig, renderização FreeType (`harfbuzz`) e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
