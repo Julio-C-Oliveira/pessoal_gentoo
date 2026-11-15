@@ -28,6 +28,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 
 #### Diretório `/etc/portage/package.accept_keywords/`:
 - `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários do GURU como `xsecurelock`.
+- `07-services`: Libera o utilitário de controle de brilho `app-misc/brightnessctl` (`~amd64`).
 - `08-apps`: Libera versões upstream recentes de utilitários como `yazi` e `fastfetch`.
 - `09-fonts`: Libera fontes Nerd Fonts provenientes do repositório GURU.
 
@@ -561,7 +562,7 @@ emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-mis
 As flags estão definidas em `package.use/07-services`.
 
 ```bash
-emerge --ask net-misc/networkmanager gnome-extra/nm-applet net-wireless/bluez net-wireless/blueman net-firewall/ufw gnome-base/gvfs sys-apps/flatpak gnome-extra/polkit-gnome sys-power/brightnessctl x11-misc/xclip x11-misc/xdg-utils x11-libs/libnotify gnome-base/dconf
+emerge --ask net-misc/networkmanager gnome-extra/nm-applet net-wireless/bluez net-wireless/blueman net-firewall/ufw gnome-base/gvfs sys-apps/flatpak gnome-extra/polkit-gnome app-misc/brightnessctl x11-misc/xclip x11-misc/xdg-utils x11-libs/libnotify gnome-base/dconf
 ```
 
 ### 5. Aplicações de Usuário:
