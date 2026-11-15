@@ -15,7 +15,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 ### Estrutura adotada neste repositório:
 
 #### Diretório `/etc/portage/package.use/`:
-- `00-core`: Flags baseline globais (`*/* X dbus udev opengl pulseaudio pipewire`), flags de arquitetura de CPU (`CPU_FLAGS_X86`) geradas pelo `cpuid2cpuflags`, placas de vídeo (`VIDEO_CARDS`) e dispositivos de entrada (`INPUT_DEVICES`).
+- `00-core`: Flags baseline globais (`*/* X dbus udev alsa opengl pulseaudio pipewire`), flags de arquitetura de CPU (`CPU_FLAGS_X86`) geradas pelo `cpuid2cpuflags`, placas de vídeo (`VIDEO_CARDS`) e dispositivos de entrada (`INPUT_DEVICES`).
 - `01-kernel`: Flags dos pacotes do kernel (`sys-kernel/gentoo-kernel`, `sys-kernel/installkernel`), assinaturas (`modules-sign`, `secureboot`) e a flag `*/* dist-kernel` (mantida comentada até o passo do kernel).
 - `02-network`: Conectividade e gerenciamento de rede (`net-misc/networkmanager`, `net-wireless/wpa_supplicant`, `gnome-extra/nm-applet`).
 - `03-bootloader`: Carregador de inicialização e assinatura EFI (`sys-boot/grub`, `sys-boot/shim`).
@@ -24,7 +24,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 - `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM, bloqueio de tela (`xsecurelock`) e temas (`qt5ct`, `qt6ct`, `lxappearance`, `numlockx`).
 - `07-services`: Serviços de sistema como Bluetooth (`bluez`, `blueman`), firewall (`ufw`), integração de arquivos (`gvfs`), Flatpak, Polkit, clipboard (`xclip`), notificações (`libnotify`), `xdg-utils` e ZRAM.
 - `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, captura com Maim, `yt-dlp`, busca (`ripgrep`, `fd`), descompactadores (`zip`, `unzip`, `p7zip`) e Neovim.
-- `09-fonts`: Subsistema Fontconfig e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
+- `09-fonts`: Subsistema Fontconfig, renderização FreeType (`harfbuzz`) e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
 
 #### Diretório `/etc/portage/package.accept_keywords/`:
 - `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários do GURU como `xsecurelock`.

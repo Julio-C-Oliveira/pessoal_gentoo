@@ -1,5 +1,6 @@
 # Subsistema de renderização e fontes
 media-libs/fontconfig
+media-libs/freetype harfbuzz
 media-fonts/fira-code
 media-fonts/noto
 media-fonts/noto-cjk
