@@ -27,7 +27,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 - `09-fonts`: Subsistema Fontconfig e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
 
 #### Diretório `/etc/portage/package.accept_keywords/`:
-- `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários como `i3lock-color` e `betterlockscreen`.
+- `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários do GURU como `xsecurelock`.
 - `08-apps`: Libera versões upstream recentes de utilitários como `yazi` e `fastfetch`.
 - `09-fonts`: Libera fontes Nerd Fonts provenientes do repositório GURU.
 
@@ -528,7 +528,7 @@ Password: <digite a senha que você configurou no passwd tux>
 Após o reboot e a entrada no sistema final instalado, instale a interface gráfica, áudio e ferramentas de usuário utilizando a organização modular de flags configuradas nos arquivos `package.use/`, `package.accept_keywords/` e `package.license/`.
 
 ### Habilitando o Repositório Comunitário GURU:
-O GURU funciona de forma análoga ao AUR do Arch Linux e provê pacotes como `i3lock-color`, `betterlockscreen` e as fontes `nerd-fonts`.
+O GURU funciona de forma análoga ao AUR do Arch Linux e provê pacotes como `xsecurelock` e as fontes `nerd-fonts`.
 
 ```bash
 emerge --ask app-eselect/eselect-repository dev-vcs/git
@@ -554,7 +554,7 @@ emerge --ask media-video/pipewire media-video/wireplumber media-sound/pavucontro
 As flags e keywords estão definidas em `package.use/06-wm-bspwm` e `package.accept_keywords/06-wm-bspwm`.
 
 ```bash
-emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst x11-misc/sddm x11-misc/i3lock-color
+emerge --ask x11-wm/bspwm x11-misc/sxhkd x11-misc/polybar x11-misc/picom x11-misc/rofi x11-misc/dunst x11-misc/sddm x11-misc/xsecurelock
 ```
 
 ### 4. Serviços de Sistema e Conectividade:

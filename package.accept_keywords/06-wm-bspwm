@@ -1,3 +1,2 @@
 # Bloqueio de tela e utilitários do repositório GURU
-x11-misc/i3lock-color ~amd64
-x11-misc/betterlockscreen ~amd64
+x11-misc/xsecurelock ~amd64

@@ -15,5 +15,5 @@ x11-misc/dunst
 # Gerenciador de Login (SDDM)
 x11-misc/sddm pam
 
-# Bloqueio de tela
-x11-misc/i3lock-color
+# Bloqueio de tela (xsecurelock com PAM)
+x11-misc/xsecurelock pam
