@@ -29,7 +29,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 #### Diretório `/etc/portage/package.accept_keywords/`:
 - `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários do GURU como `xsecurelock`.
 - `07-services`: Libera o utilitário de controle de brilho `app-misc/brightnessctl` (`~amd64`).
-- `08-apps`: Libera versões upstream recentes de utilitários como `yazi` e `fastfetch`.
+- `08-apps`: Libera versões upstream recentes de utilitários como `yazi`, `fastfetch` e a dependência `dev-libs/jemalloc`.
 - `09-fonts`: Libera fontes Nerd Fonts provenientes do repositório GURU.
 
 #### Diretório `/etc/portage/package.license/`:
