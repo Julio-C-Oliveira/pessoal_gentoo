@@ -23,7 +23,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 - `05-audio`: Subsistema de áudio moderno com PipeWire, WirePlumber, controle de volume (`pavucontrol`, `libpulse`) e player multimídia (`mpv`).
 - `06-wm-bspwm`: Gerenciador de janelas BSPWM, atalhos SXHKD, barra Polybar, compositor Picom, launcher Rofi, notificações Dunst, SDDM, bloqueio de tela (`xsecurelock`) e temas (`qt6ct`, `lxappearance`, `numlockx`).
 - `07-services`: Serviços de sistema como Bluetooth (`bluez`, `blueman`), firewall (`ufw`), integração de arquivos (`gvfs`), Flatpak, Polkit, clipboard (`xclip`), notificações (`libnotify`), `xdg-utils` e ZRAM.
-- `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, captura com Maim, `yt-dlp`, busca (`ripgrep`, `fd`), descompactadores (`zip`, `unzip`, `7zip`) e Neovim.
+- `08-apps`: Aplicações de usuário, incluindo Firefox binário (`firefox-bin`), terminal Kitty, gerenciador de arquivos Yazi, visualizador Feh, captura com Maim, `yt-dlp`, monitoramento (`htop`), busca (`ripgrep`, `fd`), descompactadores (`zip`, `unzip`, `7zip`) e Neovim.
 - `09-fonts`: Subsistema Fontconfig, renderização FreeType (`harfbuzz`) e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
 
 #### Diretório `/etc/portage/package.accept_keywords/`:
@@ -569,7 +569,7 @@ emerge --ask net-misc/networkmanager gnome-extra/nm-applet net-wireless/bluez ne
 As flags, licenças e keywords estão definidas em `package.use/08-apps`, `package.accept_keywords/08-apps` e `package.license/08-apps`.
 
 ```bash
-emerge --ask www-client/firefox-bin x11-terms/kitty app-misc/yazi media-gfx/feh media-gfx/maim net-misc/yt-dlp app-misc/fastfetch app-editors/neovim app-editors/vim sys-apps/ripgrep sys-apps/fd app-arch/7zip app-arch/zip app-arch/unzip dev-vcs/git app-admin/stow net-misc/curl net-misc/wget dev-util/github-cli
+emerge --ask www-client/firefox-bin x11-terms/kitty app-misc/yazi media-gfx/feh media-gfx/maim net-misc/yt-dlp sys-process/htop app-misc/fastfetch app-editors/neovim app-editors/vim sys-apps/ripgrep sys-apps/fd app-arch/7zip app-arch/zip app-arch/unzip dev-vcs/git app-admin/stow net-misc/curl net-misc/wget dev-util/github-cli
 ```
 
 ### 6. Tipografia e Fontes:

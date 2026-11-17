@@ -16,7 +16,8 @@ media-gfx/maim
 # Download de mídia e metadados de áudio
 net-misc/yt-dlp
 
-# Informações de sistema no terminal
+# Informações e monitoramento de sistema no terminal
+sys-process/htop
 app-misc/fastfetch
 
 # Editores de código e texto
