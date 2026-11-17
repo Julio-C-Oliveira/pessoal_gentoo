@@ -1,1 +1,1 @@
-sys-boot/grub secureboot
+sys-boot/grub secureboot GRUB_PLATFORMS: efi-64

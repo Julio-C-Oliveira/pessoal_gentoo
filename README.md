@@ -27,6 +27,7 @@ O uso de **diretórios modulares** é a prática recomendada:
 - `09-fonts`: Subsistema Fontconfig, renderização FreeType (`harfbuzz`) e fontes (Fira Code, Noto, Noto CJK, Noto Emoji, Nerd Fonts).
 
 #### Diretório `/etc/portage/package.accept_keywords/`:
+- `00-arch`: Define a arquitetura base estável (`*/* amd64`).
 - `06-wm-bspwm`: Desmascara pacotes em testes (`~amd64`) para utilitários do GURU como `xsecurelock`.
 - `07-services`: Libera o utilitário de controle de brilho `app-misc/brightnessctl` (`~amd64`).
 - `08-apps`: Libera versões upstream recentes de utilitários como `yazi`, `fastfetch` e a dependência `dev-libs/jemalloc`.
@@ -203,7 +204,7 @@ eselect profile set <NUMERO_DO_SEU_PROFILE_SYSTEMD>
 ### Configurando as CPU Flags:
 ```bash
 emerge --ask --oneshot app-portage/cpuid2cpuflags
-cpuid2cpuflags > /etc/portage/package.use/00-core
+cpuid2cpuflags >> /etc/portage/package.use/00-core
 ```
 
 ### Configurando a Placa de Vídeo (`VIDEO_CARDS`):
@@ -381,15 +382,11 @@ systemctl enable chronyd.service
 Configuraremos uma cadeia de boot compatível com UEFI Secure Boot utilizando o **Shim** da Microsoft e o **GRUB** assinado pela sua própria chave MOK.
 
 ### Configurando flags e instalando pacotes:
-1. Verifique no `/etc/portage/make.conf` se a plataforma do GRUB está no plural:
+1. Verifique se o arquivo `/etc/portage/package.use/03-bootloader` contém as flags de Secure Boot e a plataforma UEFI de 64 bits:
    ```text
-   GRUB_PLATFORMS="efi-64"
+   sys-boot/grub secureboot GRUB_PLATFORMS: efi-64
    ```
-2. Verifique se o arquivo `/etc/portage/package.use/03-bootloader` contém:
-   ```text
-   sys-boot/grub secureboot
-   ```
-3. Instale o GRUB e os utilitários de Secure Boot:
+2. Instale o GRUB e os utilitários de Secure Boot:
    ```bash
    emerge --ask sys-boot/grub sys-boot/shim sys-boot/mokutil sys-boot/efibootmgr
    ```
