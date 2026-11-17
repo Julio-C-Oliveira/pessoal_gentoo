@@ -529,7 +529,7 @@ Password: <digite a senha que você configurou no passwd tux>
 Após o reboot e a entrada no sistema final instalado, instale a interface gráfica, áudio e ferramentas de usuário utilizando a organização modular de flags configuradas nos arquivos `package.use/`, `package.accept_keywords/` e `package.license/`.
 
 ### Habilitando o Repositório Comunitário GURU:
-O GURU funciona de forma análoga ao AUR do Arch Linux e provê pacotes como `xsecurelock` e as fontes `nerd-fonts`.
+O GURU funciona de forma análoga ao AUR do Arch Linux e provê pacotes como `xsecurelock` e as fontes `nerdfonts`.
 
 ```bash
 emerge --ask app-eselect/eselect-repository dev-vcs/git
@@ -576,7 +576,7 @@ emerge --ask www-client/firefox-bin x11-terms/kitty app-misc/yazi media-gfx/feh 
 As flags e keywords estão definidas em `package.use/09-fonts` e `package.accept_keywords/09-fonts`.
 
 ```bash
-emerge --ask media-fonts/fira-code media-fonts/noto media-fonts/noto-cjk media-fonts/noto-emoji media-fonts/nerd-fonts
+emerge --ask media-fonts/fira-code media-fonts/noto media-fonts/noto-cjk media-fonts/noto-emoji media-fonts/nerdfonts
 ```
 
 ### 7. Ativação dos Serviços:
