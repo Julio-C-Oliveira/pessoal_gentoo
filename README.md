@@ -661,6 +661,7 @@ Deverá aparecer o dispositivo `/dev/zram0` ativo com o algoritmo `zstd` e prior
 Como o ZRAM é executado na RAM e sua compressão é ordens de grandeza mais rápida que a escrita em disco, é recomendado instruir o kernel a ser mais agressivo na compactação de páginas anônimas antes de tentar descartar caches úteis de arquivos:
 
 ```bash
+sudo mkdir -p /etc/sysctl.d
 echo "vm.swappiness = 180" | sudo tee /etc/sysctl.d/99-zram.conf
 sudo sysctl --system
 ```
