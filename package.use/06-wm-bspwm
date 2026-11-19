@@ -14,6 +14,7 @@ x11-misc/dunst
 
 # Gerenciador de Login (SDDM)
 gui-apps/sddm pam
+dev-qt/qt5compat qml
 
 # Bloqueio de tela (xsecurelock com PAM)
 x11-misc/xsecurelock pam
