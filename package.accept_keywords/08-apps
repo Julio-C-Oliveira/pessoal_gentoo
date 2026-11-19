@@ -2,3 +2,4 @@
 app-misc/yazi ~amd64
 dev-libs/jemalloc ~amd64
 app-misc/fastfetch ~amd64
+dev-util/google-antigravity ~amd64
