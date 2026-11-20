@@ -16,6 +16,9 @@ media-gfx/maim
 # Download de mídia e metadados de áudio
 net-misc/yt-dlp
 
+# Framework multimídia e suporte a transcodificação (Jellyfin / Intel VA-API)
+media-video/ffmpeg vpx x264 vaapi opus webp lame
+
 # Informações e monitoramento de sistema no terminal
 sys-process/htop
 app-misc/fastfetch
