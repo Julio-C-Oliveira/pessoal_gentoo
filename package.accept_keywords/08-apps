@@ -4,3 +4,4 @@ dev-libs/jemalloc ~amd64
 app-misc/fastfetch ~amd64
 dev-util/google-antigravity ~amd64
 net-misc/anydesk ~amd64
+www-apps/jellyfin-bin ~amd64
